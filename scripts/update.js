@@ -118,6 +118,7 @@ function calculatePlatinum(price999)
 function calculatePalladium(price999)
 {
     return {
+        "999": round(price999),
         "950": round(price999 * 0.95)
     };
 }
