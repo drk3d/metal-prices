@@ -1,5 +1,17 @@
 {
-  "status": "waiting",
   "updated": "",
-  "prices": {}
+  "provider": "Gold API",
+  "currencies": [
+    "USD",
+    "EUR",
+    "GBP",
+    "CHF",
+    "JPY",
+    "CNY",
+    "HKD",
+    "SGD",
+    "AUD",
+    "CAD"
+  ],
+  "metals": {}
 }
