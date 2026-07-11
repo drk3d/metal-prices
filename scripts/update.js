@@ -285,34 +285,12 @@ async function saveJson(data)
 // MAIN
 //======================================================
 
-async function main()
-{
-    try
-    {
-        console.log("");
-        console.log("==============================");
-        console.log("Starting Metal Update");
-        console.log("==============================");
+async function main() {
 
-        const download =
-            await downloadAllCurrencies();
+    const response = await fetch("https://gold-api.com");
 
-        const json =
-            buildJson(download);
+    console.log(response.status);
 
-        await saveJson(json);
-
-        console.log("");
-        console.log("Finished successfully.");
-    }
-    catch(ex)
-    {
-        console.error("");
-        console.error("Updater failed");
-        console.error(ex);
-
-        process.exit(1);
-    }
 }
 
 main();
