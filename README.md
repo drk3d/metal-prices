@@ -1,0 +1,20 @@
+metalprices
+
+│
+├── .github
+│      │
+│      └── workflows
+│             │
+│             └── update.yml
+│
+├── scripts
+│      │
+│      └── update.js
+│
+├── data
+│      │
+│      └── metals.json
+│
+├── package.json
+│
+└── README.md
