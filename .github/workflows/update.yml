@@ -44,4 +44,5 @@ jobs:
 
           git diff --staged --quiet || git commit -m "Update metal prices"
 
+          git pull --rebase origin main
           git push
