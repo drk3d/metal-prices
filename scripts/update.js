@@ -231,6 +231,30 @@ async function saveDatabase(database)
     console.log("");
     console.log("metals.json saved");
 }
+async function saveHistory(database)
+{
+    const today =
+        new Date().toISOString().substring(0, 10);
+
+    const filename =
+        `./data/history/${today}.json`;
+
+    try
+    {
+        await fs.access(filename);
+
+        console.log("History already exists for today.");
+    }
+    catch
+    {
+        await fs.writeFile(
+            filename,
+            JSON.stringify(database, null, 4)
+        );
+
+        console.log(`History saved: ${today}.json`);
+    }
+}
 //======================================================
 // MAIN
 //======================================================
@@ -247,9 +271,11 @@ async function main()
 
         const database =
             await buildDatabase();
-
+        
         await saveDatabase(database);
-
+        
+        await saveHistory(database);
+        
         console.log("");
         console.log("Done.");
 
