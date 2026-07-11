@@ -7,7 +7,7 @@ import fs from "fs/promises";
 
 const API_KEY = process.env.GOLD_API_KEY;
 
-const BASE_URL = "https://api.gold-api.com/price";
+const BASE_URL = "https://gold-api.com/api/price";
 
 const TROY_OUNCE = 31.1034768;
 
