@@ -1,19 +1,14 @@
-metalprices
-
+metal-prices
 │
 ├── .github
-│      │
-│      └── workflows
-│             │
-│             └── update.yml
-│
-├── scripts
-│      │
-│      └── update.js
+│   └── workflows
+│       └── update.yml
 │
 ├── data
-│      │
-│      └── metals.json
+│   └── metals.json
+│
+├── scripts
+│   └── update.js
 │
 ├── package.json
 │
