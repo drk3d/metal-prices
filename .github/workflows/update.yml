@@ -31,7 +31,11 @@ jobs:
         env:
           GOLD_API_KEY: ${{ secrets.GOLD_API_KEY }}
         run: node scripts/update.js
-
+      - name: Show generated palladium
+        run: |
+          echo "===== PALLADIUM ====="
+          grep -A5 '"palladium"' data/metals.json
+      
       - name: Commit updated JSON
 
         run: |
