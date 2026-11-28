@@ -65,20 +65,66 @@ function currencySymbol(currency)
 // API
 //======================================================
 
-async function fetchMetal(symbol, currency)
-{
-    const response = await fetch(
-        `${BASE_URL}/${symbol}/${currency}`
-    );
+// Gold API answers 429 when it gets many requests at once. Each run used to
+// ask it 40 times (4 metals x 10 currencies) and one 429 failed the whole run.
+// Now it is asked 4 times (each metal in USD) and the other currencies come
+// from one ECB exchange-rate request.
+const FX_URL = "https://api.frankfurter.dev/v1/latest";
+const RETRY_WAITS_MS = [5000, 20000, 60000];
 
-    if (!response.ok)
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function fetchJson(url, label)
+{
+    for (let attempt = 0; ; attempt++)
     {
-        throw new Error(
-            `${symbol}/${currency} ${response.status}`
-        );
+        const response = await fetch(url);
+
+        if (response.ok)
+            return await response.json();
+
+        const retryable = response.status === 429 || response.status >= 500;
+
+        if (!retryable || attempt >= RETRY_WAITS_MS.length)
+            throw new Error(`${label} ${response.status}`);
+
+        const retryAfter = Number(response.headers.get("retry-after"));
+        const wait = Number.isFinite(retryAfter) && retryAfter > 0
+            ? Math.min(retryAfter * 1000, 120000)
+            : RETRY_WAITS_MS[attempt];
+
+        console.log(`${label} ${response.status}, retrying in ${wait / 1000}s`);
+        await sleep(wait);
+    }
+}
+
+async function fetchMetal(symbol)
+{
+    const data = await fetchJson(`${BASE_URL}/${symbol}/USD`, `${symbol}/USD`);
+
+    if (!(Number(data?.price) > 0))
+        throw new Error(`${symbol}/USD has no price`);
+
+    return data;
+}
+
+async function fetchUsdRates()
+{
+    const others = CURRENCIES.filter((c) => c !== "USD").join(",");
+    const data = await fetchJson(`${FX_URL}?base=USD&symbols=${others}`, "USD exchange rates");
+    const rates = { USD: 1 };
+
+    for (const currency of CURRENCIES.filter((c) => c !== "USD"))
+    {
+        const rate = Number(data?.rates?.[currency]);
+
+        if (!(rate > 0))
+            throw new Error(`No USD/${currency} exchange rate`);
+
+        rates[currency] = rate;
     }
 
-    return await response.json();
+    return rates;
 }
 //======================================================
 // JEWELLERY CALCULATIONS
@@ -127,7 +173,7 @@ function calculatePalladium(price999)
 // PROCESS ONE CURRENCY
 //======================================================
 
-async function processCurrency(currency)
+function processCurrency(currency, usdPrices, rates)
 {
     console.log(`Processing ${currency}`);
 
@@ -135,19 +181,10 @@ async function processCurrency(currency)
         symbol: currencySymbol(currency)
     };
 
-    let updated = "";
-
     for (const metal of METALS)
     {
-        const data = await fetchMetal(
-            metal.symbol,
-            currency
-        );
-
-        updated = data.updatedAt;
-
         const gram =
-            ounceToGram(data.price);
+            ounceToGram(usdPrices[metal.symbol] * rates[currency]);
 
         switch (metal.symbol)
         {
@@ -173,10 +210,7 @@ async function processCurrency(currency)
         }
     }
 
-    return {
-        updated,
-        data: result
-    };
+    return result;
 }
 //======================================================
 // BUILD JSON
@@ -196,16 +230,22 @@ async function buildDatabase()
         currencies: {}
     };
 
+    const usdPrices = {};
+
+    for (const metal of METALS)
+    {
+        const data = await fetchMetal(metal.symbol);
+
+        usdPrices[metal.symbol] = Number(data.price);
+        database.updated = data.updatedAt || database.updated;
+    }
+
+    const rates = await fetchUsdRates();
+
     for (const currency of CURRENCIES)
     {
-        const result =
-            await processCurrency(currency);
-
-        database.updated =
-            result.updated;
-
         database.currencies[currency] =
-            result.data;
+            processCurrency(currency, usdPrices, rates);
     }
 
     return database;
